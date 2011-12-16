@@ -1,8 +1,6 @@
 from collections import defaultdict
 from itertools import chain
 import os.path
-import sys
-sys.path.append('E:\git')
 
 from plyplus import plyplus
 
