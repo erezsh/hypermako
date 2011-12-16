@@ -55,6 +55,6 @@ INDENT: '<INDENT>';
 DEDENT: '<DEDENT>';
 
 ###
-from indent_postlex import IndentTracker
+from hypermako.indent_postlex import IndentTracker
 self.lexer_postproc = IndentTracker
                                         

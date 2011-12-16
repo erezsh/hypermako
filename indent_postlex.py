@@ -15,7 +15,7 @@ class Tok():
         self.lexpos = None
         self.lexer = lexer
 
-class PythonIndentTracker:
+class IndentTracker:
     def __init__(self, lexer, tab_len=4):
         self.lexer = lexer
 
