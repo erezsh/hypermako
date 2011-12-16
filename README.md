@@ -24,6 +24,7 @@ The following code:
 
 
 Results in:
+
     <%inherit file="base.html"/>
     <html>
         <head>
