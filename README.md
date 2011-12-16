@@ -8,6 +8,7 @@ Basic Example
 --------------
 
 The following code:
+
     %! inherit file="base.html"
     html
         head > title | Example
