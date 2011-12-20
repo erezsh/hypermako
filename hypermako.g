@@ -51,7 +51,6 @@ hyper_tagattr: name '=' value | HYPER_TAGDECL;
 name: HYPER_TAGDECL;   // TODO: parse mako
 value: HYPER_TAGDECL | VALUE;   // TODO: there can be mako inside the string
 
-NAME: '([a-zA-Z0-9_]|\${[^}\n]*?})+';
 VALUE: '"[^\"\n]*?"';
 TEXT: '[\t \f]*\|[^\n]*';
 
