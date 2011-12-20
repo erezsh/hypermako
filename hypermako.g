@@ -13,13 +13,13 @@ block: (mako_line | hyper_line | (raw|text|hyper_verbatim) NEWLINE)+;
 mako_control_block: (mako_control_stmt NEWLINE INDENT block DEDENT)+;
 mako_meta_block: mako_meta_stmt NEWLINE INDENT block DEDENT;
 mako_meta_oneliner: mako_meta_stmt NEWLINE;
-mako_code_block: '<%(.|\n)*?%>' ;
+mako_code_block: MAKO_BLOCK ;
 
 mako_control_stmt: '%[^\n]+' ;
 mako_meta_stmt: '%![^\n]*' ;
 
 hyper_line: hyper_exprs (NEWLINE | text NEWLINE | NEWLINE INDENT block DEDENT) ;
-hyper_verbatim: '{%(.|\n)*?%}' ;
+hyper_verbatim: VERBATIM ;
 
 text: TEXT;
 
@@ -46,7 +46,7 @@ HYPER_TAGDECL: '([a-zA-Z0-9_#]|\.|\${[^}\n]*?})+'
 
 
 hyper_tagattrs: hyper_tagattr hyper_tagattr*;
-hyper_tagattr: name '=' value;
+hyper_tagattr: name '=' value | HYPER_TAGDECL;
 
 name: HYPER_TAGDECL;   // TODO: parse mako
 value: HYPER_TAGDECL | VALUE;   // TODO: there can be mako inside the string
@@ -57,6 +57,8 @@ TEXT: '[\t \f]*\|[^\n]*';
 
 WS: '[\t \f]+' (%ignore);
 NEWLINE: '(\r?\n[\t ]*)+' (%newline);
+VERBATIM: '{%(.|\n)*?%}' (%newline);
+MAKO_BLOCK: '<%(.|\n)*?%>' (%newline);
 
 INDENT: '<INDENT>';
 DEDENT: '<DEDENT>';
