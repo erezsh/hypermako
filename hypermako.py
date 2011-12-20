@@ -26,11 +26,10 @@ def flatten_string_tree(tree, depth=0):
 class ToMako(plyplus.Transformer):
     def mako_pythonblock(self, tree):
         return (tree[1],)
-    def name(self, tree):
-        return tree[1]
     def raw(self, tree):
         return (tree[1],)
     def hyper_tagdecl(self, tree):
+        tree = tree[1]
         tag_elements = classify(tree[1:], lambda x:x[0], lambda x:x[1])
         [tag] = tag_elements.get('tag', ['div'])
         [id] = tag_elements.get('id', [None])
@@ -42,13 +41,13 @@ class ToMako(plyplus.Transformer):
         if classes:
             attrs.append( 'class="%s"' % (' '.join(classes),) )
 
-        return (tree[0], tag, attrs)
+        return (tag, attrs)
     def hyper_expr(self, tree):
-        _,tag,attrs = tree[1]
+        tag,attrs = tree[1]
         if len(tree) > 2:
             attrs += tree[2]
 
-        return (tree[0], tag, attrs)
+        return (tag, attrs)
 
     def hyper_exprs(self, tree):
         if len(tree) == 3:
@@ -56,18 +55,14 @@ class ToMako(plyplus.Transformer):
         return tree
 
     def hyper_line(self, tree):
-        exprs = tree[1]
-        if exprs[0] == 'hyper_tagdecl':
-            exprs = [ exprs ]
-        else:
-            exprs = exprs[1:]
+        exprs = tree[1][1:]
 
         if len(tree) > 2:
             content = [tree[2]]
         else:
             content = None
 
-        for _, tag, attrs in reversed(exprs):
+        for tag, attrs in reversed(exprs):
             attrs = ' '.join(attrs)
             if content:
                 content = ['<%s%s>' % (tag, attrs)] + content + ['</%s>' % (tag,)]
@@ -104,8 +99,15 @@ class ToMako(plyplus.Transformer):
         return (tree[1],)
     def text(self, tree):
         return (tree[1].strip()[1:].strip(),)
+    def name(self, tree):
+        s = tree[1]
+        if s[0] == 'start':
+            s = ''.join(x[1] for x in s[1:])
+        return s
     def value(self, tree):
         s = tree[1]
+        if s[0] == 'start':
+            s = ''.join(x[1] for x in s[1:])
         if not s.startswith('"'):
             s = '"%s"' % s
         return s
@@ -118,8 +120,11 @@ class ToMako(plyplus.Transformer):
 
 
     def start(self, tree):
-        return '\n'.join(flatten_string_tree( tree[1] ))
+        return tree
+
+
 
 def convert(text):
     tree = hypermako_grammar.parse(text)
-    return ToMako().transform(tree)
+    str_tree = ToMako().transform(tree)
+    return '\n'.join(flatten_string_tree( str_tree[1] ))

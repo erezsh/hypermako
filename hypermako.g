@@ -18,37 +18,44 @@ mako_code_block: '<%(.|\n)*?%>' ;
 mako_control_stmt: '%[^\n]+' ;
 mako_meta_stmt: '%![^\n]*' ;
 
-hyper_line: (hyper_tagdecl|hyper_exprs) (NEWLINE | text NEWLINE | NEWLINE INDENT block DEDENT) ;
+hyper_line: hyper_exprs (NEWLINE | text NEWLINE | NEWLINE INDENT block DEDENT) ;
 hyper_verbatim: '{%(.|\n)*?%}' ;
 
 text: TEXT;
 
 raw: '[<-][^%][^\n]*';    // TODO: parse mako
-hyper_exprs: (hyper_expr|hyper_tagdecl) ('[\f \t]*>[\f \t]*' hyper_exprs)?;
+hyper_exprs: hyper_expr ('>' hyper_exprs)?;
 //hyper_exprs: hyper_expr;
-hyper_expr: hyper_tagdecl (WS hyper_tagattrs)?;
+hyper_expr: hyper_tagdecl hyper_tagattrs?;
 
-hyper_tagdecl:
-      tag id? class*
-    | id class*
-    | class+
-    ;
+hyper_tagdecl: HYPER_TAGDECL;
+HYPER_TAGDECL: '([a-zA-Z0-9_#]|\.|\${[^}\n]*?})+'
+{
+    start:
+          tag id? class*
+        | id class*
+        | class+
+        ;
 
-tag: name;
-id: '\#' name;
-class: '\.' name;
+    tag: name;
+    id: '\#' name;
+    class: '\.' name;
+    name: NAME;   // TODO: parse mako
+    NAME: '([a-zA-Z0-9_]|\${[^}\n]*?})+';
+};
 
-hyper_tagattrs: hyper_tagattr (WS hyper_tagattr)*;
-hyper_tagattr: name WS? '=' WS? value;
 
-name: NAME;   // TODO: parse mako
-value: NAME | VALUE;   // TODO: there can be mako inside the string
+hyper_tagattrs: hyper_tagattr hyper_tagattr*;
+hyper_tagattr: name '=' value;
+
+name: HYPER_TAGDECL;   // TODO: parse mako
+value: HYPER_TAGDECL | VALUE;   // TODO: there can be mako inside the string
 
 NAME: '([a-zA-Z0-9_]|\${[^}\n]*?})+';
 VALUE: '"[^\"\n]*?"';
 TEXT: '[\t \f]*\|[^\n]*';
 
-WS: '[\t \f]+';
+WS: '[\t \f]+' (%ignore);
 NEWLINE: '(\r?\n[\t ]*)+' (%newline);
 
 INDENT: '<INDENT>';
