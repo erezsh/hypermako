@@ -75,6 +75,8 @@ class ToMako(plyplus.Transformer):
         return list(chain(*tree[1:]))
     def mako_control_stmt(self, tree):
         return tree[1]
+    def mako_control_stmt2(self, tree):
+        return tree[1]
     def mako_meta_stmt(self, tree):
         stmt = tree[1]
         assert stmt.startswith( '%!' )
@@ -112,6 +114,8 @@ class ToMako(plyplus.Transformer):
             s = '"%s"' % s
         return s
     def hyper_tagattr(self, tree):
+        if tree[1][0] == 'start':
+            return ''.join(x[1] for x in tree[1][1:])
         return '%s=%s' % (tree[1], tree[2])
     def hyper_tagattrs(self, tree):
         return tree[1:]
