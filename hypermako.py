@@ -65,7 +65,10 @@ class ToMako(plyplus.Transformer):
         for tag, attrs in reversed(exprs):
             attrs = ' '.join(attrs)
             if content:
-                content = ['<%s%s>' % (tag, attrs)] + content + ['</%s>' % (tag,)]
+                if content == [('',)]:  # Empty tag hack
+                    content = ['<%s%s></%s>' % (tag, attrs, tag)]
+                else:
+                    content = ['<%s%s>' % (tag, attrs)] + content + ['</%s>' % (tag,)]
             else:
                 content = ['<%s %s />' % (tag,attrs)]
 
@@ -132,3 +135,4 @@ def convert(text):
     tree = hypermako_grammar.parse(text)
     str_tree = ToMako().transform(tree)
     return '\n'.join(flatten_string_tree( str_tree[1] ))
+
