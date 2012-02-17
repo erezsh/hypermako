@@ -3,7 +3,7 @@ start: block?;
 block: (mako_line | hyper_line | (raw|text|hyper_verbatim) NEWLINE)+;
 
 // TODO parse mako!
-@mako_line:
+mako_line:
     mako_meta_oneliner
     | mako_meta_block
     | mako_control_block
@@ -51,7 +51,7 @@ HYPER_TAGDECL: '([a-zA-Z0-9_#-]|\.|\${[^}\n]*?})+'
 };
 
 
-hyper_tagattrs: hyper_tagattr hyper_tagattr*;
+@hyper_tagattrs: hyper_tagattr hyper_tagattr*;
 hyper_tagattr: name '=' value | HYPER_TAGDECL;
 
 name: HYPER_TAGDECL;   // TODO: parse mako
@@ -69,6 +69,6 @@ INDENT: '<INDENT>';
 DEDENT: '<DEDENT>';
 
 ###
-from hypermako.indent_postlex import IndentTracker
+from indent_postlex import IndentTracker
 self.lexer_postproc = IndentTracker
                                         

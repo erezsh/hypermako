@@ -6,16 +6,16 @@ html
     head
         title | lalala
         script
-            <!--
             {%
+            <!--
             x = 1;
             function b()
             {
                 x = 3;
             }
 x = 4;
-            %}
             -->
+            %}
 
     body
         form action="lala" method=post
