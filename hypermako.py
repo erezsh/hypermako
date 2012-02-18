@@ -13,6 +13,9 @@ def classify(l, key, value=None):
 hypermako_dir = os.path.split(__file__)[0]
 hypermako_grammar = plyplus.Grammar(file(os.path.join(hypermako_dir,'hypermako.g')), auto_filter_tokens=True, expand_all_repeaters=True)
 
+class Str(str):
+    pass
+
 class HyperToMako(plyplus.SVisitor):
     def hyper_tagdecl(self, tagdecl):
         [tag] = tagdecl.select('tag>name>*:is-leaf!') or ['div']
@@ -21,6 +24,11 @@ class HyperToMako(plyplus.SVisitor):
         tagdecl.head, tagdecl.tail = 'hyper_tagdecl2', [tag, ids, classes]
 
     def hyper_tagattr(self, tagattr):
+        if tagattr.tail[0].head == 'start': # "raw" attribute, we just send it as it is
+            [raw_attr] = tagattr.select('name > *:is-leaf!')
+            tagattr.head, tagattr.tail = 'hyper_tagattr2', [Str('*RAW*'), raw_attr]
+            return
+
         [name] = tagattr.select('name name>*:is-leaf!')
         [value] = tagattr.select('value *:is-leaf!')
         if value.startswith('"') and value.endswith('"'):
@@ -47,6 +55,8 @@ class HyperToMako(plyplus.SVisitor):
 
     def text(self, text):
         text.head, text.tail = 'mako_tree', [text.tail[0].strip()[1:].strip()]   # strip spaces and left pipe
+    def raw(self, text):
+        text.head, text.tail = 'mako_tree', [text.tail[0].strip()]
     def hyper_verbatim(self, tree):
         tree.head, tree.tail = 'mako_tree', [tree.tail[0][2:-2].strip()]
 
@@ -61,7 +71,10 @@ class HyperToMako(plyplus.SVisitor):
 
         for expr in reversed(exprs):
             tag, attrs = expr.tail
-            attrs = ' '.join('%s="%s"'%(name,' '.join(values)) for name,values in attrs.iteritems())
+            attrs = ' '.join(
+                    ('%s="%s"'%(name,' '.join(values)) if name!='*RAW*' else ' '.join(values))
+                    for name,values in attrs.iteritems()
+                )
             if attrs: attrs = ' ' + attrs
             if content is not None:
                 if content == '':   # TODO fix this test
@@ -143,7 +156,7 @@ def convert(text):
     tree = hypermako_grammar.parse(text)
     HyperToMako().visit(tree)
     SimplifyMakoTree().visit(tree)
-    tree.to_png_with_pydot('hyper2.png')
+    #tree.to_png_with_pydot('hyper2.png')
     tree.calc_depth()
     return MakoTreeToText().transform( tree )
 
