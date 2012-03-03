@@ -1,5 +1,4 @@
 from collections import defaultdict
-from itertools import chain
 import os.path
 
 from plyplus import plyplus
@@ -18,19 +17,19 @@ class Str(str):
 
 class HyperToMako(plyplus.SVisitor):
     def hyper_tagdecl(self, tagdecl):
-        [tag] = tagdecl.select('tag>name>*:is-leaf!') or ['div']
-        ids = tagdecl.select('id>name>*:is-leaf!')
-        classes = tagdecl.select('class>name>*:is-leaf!')
+        [tag] = tagdecl.select('tag>name>*:is-leaf') or ['div']
+        ids = tagdecl.select('id>name>*:is-leaf')
+        classes = tagdecl.select('class>name>*:is-leaf')
         tagdecl.head, tagdecl.tail = 'hyper_tagdecl2', [tag, ids, classes]
 
     def hyper_tagattr(self, tagattr):
         if tagattr.tail[0].head == 'start': # "raw" attribute, we just send it as it is
-            [raw_attr] = tagattr.select('name > *:is-leaf!')
+            [raw_attr] = tagattr.select('name > *:is-leaf')
             tagattr.head, tagattr.tail = 'hyper_tagattr2', [Str('*RAW*'), raw_attr]
             return
 
-        [name] = tagattr.select('name name>*:is-leaf!')
-        [value] = tagattr.select('value *:is-leaf!')
+        [name] = tagattr.select('name name>*:is-leaf')
+        [value] = tagattr.select('value *:is-leaf')
         if value.startswith('"') and value.endswith('"'):
             value = value[1:-1]
         tagattr.head, tagattr.tail = 'hyper_tagattr2', [name, value]
@@ -124,7 +123,7 @@ class HyperToMako(plyplus.SVisitor):
             ctl2 = tree.tail[ctl2_i]
             assert ctl2.head == 'mako_tree' and len(ctl2.tail) == 1
             tree.tail[ctl2_i] = ctl2.tail[0]
-            
+
         tree.tail[0] = ctl_start
         tree.tail.append( ctl_end )
         tree.head = 'mako_tree'
