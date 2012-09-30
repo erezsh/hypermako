@@ -54,8 +54,10 @@ class HyperToMako(plyplus.SVisitor):
 
     def text(self, text):
         text.head, text.tail = 'mako_tree', [text.tail[0].strip()[1:].strip()]   # strip spaces and left pipe
-    def raw(self, text):
-        text.head, text.tail = 'mako_tree', [text.tail[0].strip()]
+    def var(self, var):
+        var.head, var.tail = 'mako_tree', ['${%s}' % var.tail[0].strip()[2:].strip()]   # strip spaces and left pipe
+    def raw(self, raw):
+        raw.head, raw.tail = 'mako_tree', [raw.tail[0].strip()]
     def hyper_verbatim(self, tree):
         tree.head, tree.tail = 'mako_tree', [tree.tail[0][2:-2].strip()]
 

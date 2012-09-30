@@ -1,3 +1,3 @@
-from hypermako import convert, hypermako_grammar
+from main import convert, hypermako_grammar
 
 

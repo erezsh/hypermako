@@ -1,6 +1,6 @@
 start: block?;
 
-block: (mako_line | hyper_line | (raw|text|hyper_verbatim) NEWLINE)+;
+block: (mako_line | hyper_line | (raw|text|var|hyper_verbatim) NEWLINE)+;
 
 // TODO parse mako!
 mako_line:
@@ -9,7 +9,7 @@ mako_line:
     | mako_control_block
     | mako_code_block NEWLINE
     ;
-    
+
 mako_control_block: mako_control_stmt NEWLINE INDENT block DEDENT (mako_control_stmt2 NEWLINE INDENT block DEDENT)*;
 mako_meta_block: mako_meta_stmt NEWLINE INDENT block DEDENT;
 mako_meta_oneliner: mako_meta_stmt NEWLINE;
@@ -24,10 +24,11 @@ mako_control_stmt2: mako_elif_stmt | mako_else_stmt;
 
 mako_meta_stmt: '%![^\n]*' ;
 
-hyper_line: hyper_exprs (NEWLINE | text NEWLINE | NEWLINE INDENT block DEDENT) ;
+hyper_line: hyper_exprs (NEWLINE | (text|var) NEWLINE | NEWLINE INDENT block DEDENT) ;
 hyper_verbatim: VERBATIM ;
 
 text: TEXT;
+var: VAR;
 
 raw: '[<-][^%][^\n]*';    // TODO: parse mako
 hyper_exprs: hyper_expr ('>' hyper_exprs)?;
@@ -52,13 +53,14 @@ HYPER_TAGDECL: '([a-zA-Z0-9_#-]|\.|\${[^}\n]*?})+'
 
 
 @hyper_tagattrs: hyper_tagattr hyper_tagattr*;
-hyper_tagattr: name '=' value | HYPER_TAGDECL;
+hyper_tagattr: name '(?<!\|)=' value | HYPER_TAGDECL;
 
 name: HYPER_TAGDECL;   // TODO: parse mako
 value: HYPER_TAGDECL | VALUE;   // TODO: there can be mako inside the string
 
 VALUE: '"[^\"\n]*?"';
-TEXT: '[\t \f]*\|[^\n]*';
+TEXT: '[\t \f]*\|(?!=)[^\n]*';
+VAR: '[\t \f]*\|=[^\n]*';
 
 WS: '[\t \f]+' (%ignore);
 NEWLINE: '(\r?\n[\t ]*)+' (%newline);
@@ -71,4 +73,4 @@ DEDENT: '<DEDENT>';
 ###
 from hypermako.indent_postlex import IndentTracker
 self.lexer_postproc = IndentTracker
-                                        
+

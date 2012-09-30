@@ -19,19 +19,18 @@ The following code:
                 %for i in rows:
                     li#item${i.id} > .inner
                         %if i.link:
-                            a href="${i.link}" | ${i}
+                            a href="${i.link}" |= i.text
                         %else:
-                            | ${i}              
-
+                            |= i.text
 
 Results in:
 
     <%inherit file="base.html"/>
     <html>
         <head>
-        <title>
-            Example
-        </title>
+            <title>
+                Example
+            </title>
         </head>
         <body>
             <h2 class="blue">
@@ -40,19 +39,20 @@ Results in:
             <ul id="main_list">
                 %for i in rows:
                     <li id="item${i.id}">
-                    <div class="inner">
-                        %if i.link:
-                            <a href="${i.link}">
-                                ${i}
-                            </a>
-                        %else:
-                            ${i}
-                        %endif
-                    </div>
+                        <div class="inner">
+                            %if i.link:
+                                <a href="${i.link}">
+                                    ${i.text}
+                                </a>
+                            %else:
+                                ${i.text}
+                            %endif
+                        </div>
                     </li>
                 %endfor
             </ul>
         </body>
     </html>
+
 
 See test/test.mako for a more complete demonstration of features
