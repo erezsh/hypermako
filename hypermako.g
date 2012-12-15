@@ -71,6 +71,6 @@ INDENT: '<INDENT>';
 DEDENT: '<DEDENT>';
 
 ###
-from hypermako.indent_postlex import IndentTracker
-self.lexer_postproc = IndentTracker
+from plyplus.grammars.python_indent_postlex import PythonIndentTracker
+self.lexer_postproc = PythonIndentTracker
 
