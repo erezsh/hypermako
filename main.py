@@ -10,32 +10,34 @@ def classify(l, key, value=None):
     return dict(classification)
 
 hypermako_dir = os.path.split(__file__)[0]
-hypermako_grammar = plyplus.Grammar(file(os.path.join(hypermako_dir,'hypermako.g')), auto_filter_tokens=True, expand_all_repeaters=True)
+hypermako_grammar = plyplus.Grammar(file(os.path.join(hypermako_dir,'hypermako.g')), auto_filter_tokens=True)
 
-class Str(str):
+class List(list):
+    pass
+class Dict(dict):
     pass
 
 class HyperToMako(plyplus.SVisitor):
     def hyper_tagdecl(self, tagdecl):
         [tag] = tagdecl.select('tag>name>*:is-leaf') or ['div']
-        ids = tagdecl.select('id>name>*:is-leaf')
-        classes = tagdecl.select('class>name>*:is-leaf')
-        tagdecl.head, tagdecl.tail = 'hyper_tagdecl2', [tag, ids, classes]
+        ids = List(tagdecl.select('id>name>*:is-leaf'))
+        classes = List(tagdecl.select('class>name>*:is-leaf'))
+        tagdecl.reset('hyper_tagdecl2', [tag, ids, classes])
 
     def hyper_tagattr(self, tagattr):
         if tagattr.tail[0].head == 'start': # "raw" attribute, we just send it as it is
-            [raw_attr] = tagattr.select('name > *:is-leaf')
-            tagattr.head, tagattr.tail = 'hyper_tagattr2', [Str('*RAW*'), raw_attr]
+            raw_attr = tagattr.select1('name > *:is-leaf')
+            tagattr.reset('hyper_tagattr2', ['*RAW*', raw_attr])
             return
 
-        [name] = tagattr.select('name name>*:is-leaf')
-        [value] = tagattr.select('value *:is-leaf')
+        name = tagattr.select1('name name>*:is-leaf')
+        value = tagattr.select1('value *:is-leaf')
         if value.startswith('"') and value.endswith('"'):
             value = value[1:-1]
-        tagattr.head, tagattr.tail = 'hyper_tagattr2', [name, value]
+        tagattr.reset('hyper_tagattr2', [name, value])
 
     def hyper_expr(self, expr):
-        [tagdecl] = expr.select('hyper_tagdecl2')
+        tagdecl = expr.select1('hyper_tagdecl2')
         attrs = {}
         tag, ids, classes = tagdecl.tail
         if ids:
@@ -50,16 +52,16 @@ class HyperToMako(plyplus.SVisitor):
             else:
                 attrs[name] = [ value ]
 
-        expr.head, expr.tail = 'hyper_expr2', [tag, attrs]
+        expr.reset('hyper_expr2', [tag, Dict(attrs)])
 
     def text(self, text):
-        text.head, text.tail = 'mako_tree', [text.tail[0].strip()[1:].strip()]   # strip spaces and left pipe
+        text.reset('mako_tree', [text.tail[0].strip()[1:].strip()])   # strip spaces and left pipe
     def var(self, var):
-        var.head, var.tail = 'mako_tree', ['${%s}' % var.tail[0].strip()[2:].strip()]   # strip spaces and left pipe
+        var.reset('mako_tree', ['${%s}' % var.tail[0].strip()[2:].strip()])   # strip spaces and left pipe
     def raw(self, raw):
-        raw.head, raw.tail = 'mako_tree', [raw.tail[0].strip()]
+        raw.reset('mako_tree', [raw.tail[0].strip()])
     def hyper_verbatim(self, tree):
-        tree.head, tree.tail = 'mako_tree', [tree.tail[0][2:-2].strip()]
+        tree.reset('mako_tree', [tree.tail[0][2:-2].strip()])
 
     def hyper_line(self, line):
         exprs = line.select('hyper_expr2')
@@ -86,7 +88,7 @@ class HyperToMako(plyplus.SVisitor):
                 content = ['<%s%s />' % (tag,attrs)]
             content = line.__class__('mako_tree', content)
 
-        line.head, line.tail = 'mako_tree', [content]
+        line.reset('mako_tree', [content])
 
     def block(self, block):
         block.head = 'mako_tree'
@@ -102,7 +104,7 @@ class HyperToMako(plyplus.SVisitor):
     def mako_meta_stmt(self, tree):
         stmt = tree.tail[0]
         assert stmt.startswith( '%!' )
-        tree.head, tree.tail = 'mako_tree', [stmt[2:].strip()]
+        tree.reset('mako_tree', [stmt[2:].strip()])
     def mako_meta_oneliner(self, tree):
         [stmt] = tree.tail[0].tail
         tree.head, tree.tail = 'mako_tree', ['<%' + stmt + '/>']
@@ -111,9 +113,7 @@ class HyperToMako(plyplus.SVisitor):
         control_word = stmt.split(None,1)[0]
         opener = '<%'+stmt + '>'
         closer = '</%'+control_word+'>'
-        tree.head = 'mako_tree'
-        tree.tail[0] = opener
-        tree.tail.append(closer)
+        tree.reset('mako_tree', [opener] + tree.tail[1:] + [closer])
 
     def mako_control_block(self, tree):
         ctl_start = tree.tail[0].tail[0]
@@ -121,14 +121,13 @@ class HyperToMako(plyplus.SVisitor):
         ctl_word = ctl_start[1:].split(None,1)[0]
         ctl_end = '%end'+ctl_word
 
-        for ctl2_i in xrange(2, len(tree.tail), 2):
-            ctl2 = tree.tail[ctl2_i]
+        tail = list(tree.tail)
+        for ctl2_i in xrange(2, len(tail), 2):
+            ctl2 = tail[ctl2_i]
             assert ctl2.head == 'mako_tree' and len(ctl2.tail) == 1
-            tree.tail[ctl2_i] = ctl2.tail[0]
+            tail[ctl2_i] = ctl2.tail[0]
 
-        tree.tail[0] = ctl_start
-        tree.tail.append( ctl_end )
-        tree.head = 'mako_tree'
+        tree.reset('mako_tree', [ctl_start] + tail[1:] + [ctl_end])
 
 class SimplifyMakoTree(plyplus.SVisitor):
     def mako_tree(self, tree):
